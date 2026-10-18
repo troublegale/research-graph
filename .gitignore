@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Виртуальные окружения
+.venv/
+venv/
+
+# Секреты и локальная конфигурация
+.env
+.env.*
+!.env.example
+
+# Кэши инструментов
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Покрытие
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Данные проекта (создаются локально)
+/data/
+
+# IDE / ОС
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
