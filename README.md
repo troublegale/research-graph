@@ -271,6 +271,17 @@ uv run pytest
 uv run pre-commit run --all-files
 ```
 
+Проверка интерфейса в Chromium (создаёт и удаляет одну тестовую заявку,
+сохраняет скриншоты в `artifacts`):
+
+```bash
+uv run playwright install chromium
+uv run python scripts/check_web.py http://127.0.0.1:8000
+```
+
+Для проверки нужен запущенный сервер с каталогом и загруженной моделью.
+CI также выполняет PostgreSQL-интеграцию и сценарий браузера на Docker Compose.
+
 Тесты используют изолированные БД и настоящие миграции, проверяют ETL,
 идемпотентность, ограничения, сервисы, негативные API-сценарии, оба алгоритма,
 безопасные форматы, split и CLI. CI: Linux/Windows × Python 3.12/3.13,
