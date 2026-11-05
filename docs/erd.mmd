@@ -1,0 +1,76 @@
+erDiagram
+    brands {
+        int id PK
+        string name UK
+    }
+    car_models {
+        int id PK
+        int brand_id FK
+        string name "UNIQUE(brand_id,name)"
+    }
+    locations {
+        int id PK
+        string name UK
+    }
+    listings {
+        int id PK
+        string source_id UK
+        int car_model_id FK
+        int location_id FK
+        int year "nullable, 1900..2100"
+        float mileage "nullable, nonnegative"
+        string body_type
+        string fuel_type
+        string transmission
+        float power "nullable, positive"
+        float engine_displacement "nullable, positive"
+        string link
+    }
+    listing_observations {
+        int id PK
+        int listing_id FK
+        datetime observed_at "UNIQUE(listing_id,observed_at)"
+        int price "positive"
+    }
+    search_requests {
+        int id PK
+        string title
+        int budget "positive"
+        int min_year "nullable"
+        float max_mileage "nullable"
+        int brand_id FK "nullable"
+        int location_id FK "nullable"
+        string body_type "nullable"
+        string transmission "nullable"
+        string status "open or closed"
+        int revision "positive"
+    }
+    request_candidates {
+        int id PK
+        int request_id FK
+        int listing_id FK "UNIQUE(request_id,listing_id)"
+        int request_revision "positive"
+    }
+    model_versions {
+        int id PK
+        string version UK "SHA256 of artifact"
+        string algorithm
+        string metrics_json
+    }
+    price_estimates {
+        int id PK
+        int model_version_id FK
+        int listing_id FK "nullable for manual input"
+        float predicted_price "positive"
+        string features_json
+    }
+    brands ||--o{ car_models : contains
+    car_models ||--o{ listings : identifies
+    locations ||--o{ listings : located_in
+    listings ||--|{ listing_observations : observed
+    brands o|--o{ search_requests : optional_filter
+    locations o|--o{ search_requests : optional_filter
+    search_requests ||--o{ request_candidates : contains
+    listings ||--o{ request_candidates : shortlisted
+    model_versions ||--o{ price_estimates : produced
+    listings o|--o{ price_estimates : evaluated
