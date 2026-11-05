@@ -124,6 +124,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             },
         )
 
+    @app.exception_handler(Exception)
+    async def unexpected_error(_: Request, exc: Exception) -> JSONResponse:
+        logger.error("Unexpected application error", exc_info=exc)
+        return JSONResponse(
+            status_code=500,
+            content={"error": {"code": "internal_error", "message": "Внутренняя ошибка сервиса"}},
+        )
+
     from starlette.exceptions import HTTPException
 
     @app.exception_handler(HTTPException)

@@ -201,3 +201,15 @@ def test_integrity_error_contract(client: TestClient, monkeypatch: pytest.Monkey
     response = client.post("/api/requests", json={"title": "Конфликт", "budget": 1000000})
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "integrity_conflict"
+
+
+def test_unexpected_error_contract(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    def fail(self: Session, *args: object, **kwargs: object) -> None:
+        raise RuntimeError("private internal details")
+
+    monkeypatch.setattr(Session, "execute", fail)
+    with TestClient(client.app, raise_server_exceptions=False) as safe_client:
+        response = safe_client.get("/api/health")
+    assert response.status_code == 500
+    assert response.json()["error"]["code"] == "internal_error"
+    assert "private" not in response.text
