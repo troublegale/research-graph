@@ -105,6 +105,20 @@ def test_request_validation(client: TestClient, payload: dict[str, Any]) -> None
     assert response.json()["error"]["details"]
 
 
+@pytest.mark.parametrize(
+    "parameters",
+    [
+        {"brand_id": 0},
+        {"location_id": -1},
+        {"min_year": 1800},
+        {"max_mileage": -1},
+        {"sort": "unsafe"},
+    ],
+)
+def test_catalog_rejects_invalid_filters(client: TestClient, parameters: dict[str, Any]) -> None:
+    assert client.get("/api/listings", params=parameters).status_code == 422
+
+
 def test_model_upload_and_predictions(client: TestClient) -> None:
     car = CarFeatures(brand="Toyota", name="Corolla", location="Москва").model_dump()
     assert client.post("/predict", json=[car]).status_code == 409

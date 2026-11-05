@@ -166,10 +166,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         page: Annotated[int, Query(ge=1)] = 1,
         page_size: Annotated[int, Query(ge=1, le=100)] = 20,
         budget: Annotated[int | None, Query(gt=0)] = None,
-        brand_id: int | None = None,
-        location_id: int | None = None,
-        min_year: int | None = None,
-        max_mileage: float | None = None,
+        brand_id: Annotated[int | None, Query(gt=0)] = None,
+        location_id: Annotated[int | None, Query(gt=0)] = None,
+        min_year: Annotated[int | None, Query(ge=1900, le=2100)] = None,
+        max_mileage: Annotated[float | None, Query(ge=0, le=10_000_000)] = None,
         sort: Literal["price", "-price", "year", "-year"] = "price",
     ) -> dict[str, Any]:
         query = catalog_query()

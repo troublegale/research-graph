@@ -44,7 +44,16 @@ def test_migrations_roundtrip(engine: Engine) -> None:
 
 
 @pytest.mark.parametrize(
-    "value,expected", [(None, None), ("nan", None), ("", None), ("1,6 LTR", 1.6), ("120", 120)]
+    "value,expected",
+    [
+        (None, None),
+        ("nan", None),
+        ("", None),
+        ("1,6 LTR", 1.6),
+        ("120", 120),
+        ("1 000 000", 1000000),
+        ("1\u00a0000", 1000),
+    ],
 )
 def test_numeric_cleanup(value: str | None, expected: float | None) -> None:
     assert number(value) == expected
@@ -54,9 +63,11 @@ def test_numeric_cleanup(value: str | None, expected: float | None) -> None:
     "change",
     [
         {"link": "https://evil.test/123"},
+        {"link": "https://evildrom.ru/toyota/corolla/123.html"},
         {"price": ""},
         {"price": "0"},
         {"price": "1.5"},
+        {"price": "2147483648"},
         {"year": "2010.1"},
         {"year": "2040"},
         {"power": "-1"},

@@ -41,7 +41,9 @@ def number(value: str | None) -> float | None:
     """Normalize missing markers; reject non-finite numeric data."""
     if value is None or value.strip().lower() in {"", "nan", "none", "null"}:
         return None
-    result = float(value.strip().replace(",", ".").split()[0])
+    normalized = value.strip().removesuffix("LTR").strip()
+    normalized = re.sub(r"\s+", "", normalized).replace(",", ".")
+    result = float(normalized)
     if not math.isfinite(result):
         raise ValueError("non-finite number")
     return result
@@ -50,11 +52,11 @@ def number(value: str | None) -> float | None:
 def clean_row(row: dict[str, str]) -> CleanRow:
     """Convert one raw Kaggle row; essential identity/price/date cannot be missing."""
     link = row.get("link", "").strip()
-    match = re.fullmatch(r"https?://[a-z0-9.-]*drom\.ru/[^\s]*/(\d+)\.html/?", link)
+    match = re.fullmatch(r"https?://(?:[a-z0-9-]+\.)*drom\.ru/[^\s]*/(\d+)\.html/?", link)
     if not match:
         raise ValueError("invalid listing link")
     price = number(row.get("price"))
-    if price is None or price <= 0 or not price.is_integer():
+    if price is None or not 0 < price <= 1_000_000_000 or not price.is_integer():
         raise ValueError("invalid price")
     year = number(row.get("year"))
     if year is not None and not year.is_integer():
