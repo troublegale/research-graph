@@ -59,6 +59,10 @@ class Settings(BaseSettings):
         le=64,
         description="Максимальное число параллельных запросов, [1; 64].",
     )
+    database_url: str = "sqlite:///data/app.db"
+    model_path: Path = Path("artifacts/model.zip")
+    ml_threads: int = Field(default=6, ge=1, le=16)
+    enable_model_upload: bool = True
 
     @field_validator("github_token", mode="before")
     @classmethod

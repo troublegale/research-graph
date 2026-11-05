@@ -27,6 +27,10 @@ htmlcov/
 
 # Данные проекта (создаются локально)
 /data/
+/artifacts/
+*.db
+*.db-shm
+*.db-wal
 
 # IDE / ОС
 .idea/
