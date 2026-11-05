@@ -123,6 +123,8 @@ jobs:
         run: docker compose up --build -d --wait
       - name: Browser user journey and mobile layout
         run: uv run python scripts/check_web.py http://127.0.0.1:8000
+      - name: Delayed responses and operation feedback
+        run: uv run python scripts/check_feedback.py http://127.0.0.1:8000
       - name: Container logs
         if: always()
         run: docker compose logs > artifacts/compose.log

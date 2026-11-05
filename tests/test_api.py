@@ -135,6 +135,19 @@ def test_model_upload_and_predictions(client: TestClient) -> None:
     assert client.get("/api/analytics/deviations").json()[0]["count"] == 1
 
 
+def test_identical_upload_does_not_replace_open_file(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    payload = ridge_archive()
+    assert client.post("/upload-model", files={"file": ("model.zip", payload)}).status_code == 200
+
+    def file_is_open(self: Path, target: Path) -> Path:
+        raise PermissionError("source file is still selected in the browser")
+
+    monkeypatch.setattr(Path, "replace", file_is_open)
+    assert client.post("/upload-model", files={"file": ("model.zip", payload)}).status_code == 200
+
+
 def test_csv_prediction(client: TestClient, tmp_path: Path) -> None:
     assert client.post("/predict-from-csv", files={"file": ("x.csv", b"x")}).status_code == 409
     client.post("/upload-model", files={"file": ("model.zip", ridge_archive())})

@@ -328,9 +328,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             ) from exc
         with app.state.upload_lock:
             settings.model_path.parent.mkdir(parents=True, exist_ok=True)
-            pending = settings.model_path.with_suffix(".pending")
-            pending.write_bytes(data)
-            pending.replace(settings.model_path)
+            # Re-uploading the same file need not replace it. On Windows the
+            # browser may still hold the selected source file open.
+            if not settings.model_path.is_file() or settings.model_path.read_bytes() != data:
+                pending = settings.model_path.with_suffix(".pending")
+                pending.write_bytes(data)
+                pending.replace(settings.model_path)
             request.app.state.predictor = predictor
         return {"status": "loaded", "version": predictor.version}
 
