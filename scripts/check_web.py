@@ -11,6 +11,7 @@ from playwright.sync_api import expect, sync_playwright
 
 
 def main(url: str) -> None:
+    expect.set_options(timeout=15000)
     output = Path("artifacts")
     output.mkdir(exist_ok=True)
     with sync_playwright() as playwright:
@@ -19,6 +20,7 @@ def main(url: str) -> None:
         errors: list[str] = []
         page.on("pageerror", lambda error: errors.append(str(error)))
         page.goto(url)
+        expect(page.locator("#requests")).to_have_attribute("aria-busy", "false")
         page.locator('#request-form [name="title"]').fill("Проверка интерфейса")
         page.locator('#request-form [name="budget"]').fill("2000000")
         page.get_by_role("button", name="Сохранить заявку", exact=True).click()
