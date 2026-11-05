@@ -40,6 +40,7 @@ def listing_dict(row: Any) -> dict[str, Any]:
     return {
         "id": listing.id,
         "source_id": listing.source_id,
+        "is_demo": listing.link.startswith("https://demo.drom.ru/"),
         "name": name,
         "brand": brand,
         "location": location,

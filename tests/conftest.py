@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pytest
 
+pytest_plugins = ["tests.db_fixtures"]
+
 
 @pytest.fixture(autouse=True)
 def isolated_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

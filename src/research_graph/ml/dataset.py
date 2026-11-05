@@ -66,7 +66,16 @@ def prepare_dataset(
         ]
     if len(selected) < 100:
         raise ValueError("fewer than 100 valid unique listings")
-    pd.DataFrame(selected).to_parquet(output, index=False)
+    frame = pd.DataFrame(selected)
+    frame.to_parquet(output, index=False)
+    frame.rename(
+        columns={
+            "body_type": "bodyType",
+            "fuel_type": "fuelType",
+            "engine_displacement": "engineDisplacement",
+            "observed_at": "parse_date",
+        }
+    ).to_csv(output.with_suffix(".catalog.csv"), index=False)
     report = {
         "raw_rows": total,
         "rejected_rows": rejected,

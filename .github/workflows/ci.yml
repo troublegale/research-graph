@@ -2,8 +2,8 @@ name: CI
 
 on:
   push:
-    branches: [main]
     tags: ["*"]
+    branches: ["**"]
   pull_request:
   workflow_dispatch:
 
@@ -69,3 +69,30 @@ jobs:
           uv run rg --help
           uv run rg version
           uv run rg check-config
+
+  postgres:
+    name: PostgreSQL integration
+    runs-on: ubuntu-latest
+    needs: lint
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: cars
+          POSTGRES_PASSWORD: test-only-password
+          POSTGRES_DB: cars_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cars -d cars_test"
+          --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      TEST_POSTGRES_URL: postgresql+psycopg://cars:test-only-password@localhost:5432/cars_test
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run pytest tests/test_postgres.py --no-cov -q

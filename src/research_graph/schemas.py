@@ -4,7 +4,20 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class RequestCreate(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    model_config = ConfigDict(
+        extra="forbid",
+        str_strip_whitespace=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "title": "Городская машина",
+                    "budget": 1500000,
+                    "min_year": 2012,
+                    "max_mileage": 180000,
+                }
+            ]
+        },
+    )
     title: str = Field(min_length=1, max_length=200)
     budget: int = Field(gt=0, le=1_000_000_000)
     min_year: int | None = Field(default=None, ge=1900, le=2100)
@@ -27,7 +40,27 @@ class RequestRead(RequestCreate):
 
 
 class CarFeatures(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, allow_inf_nan=False)
+    model_config = ConfigDict(
+        extra="forbid",
+        str_strip_whitespace=True,
+        allow_inf_nan=False,
+        json_schema_extra={
+            "examples": [
+                {
+                    "brand": "Toyota",
+                    "name": "Corolla",
+                    "location": "Москва",
+                    "year": 2015,
+                    "mileage": 100000,
+                    "power": 122,
+                    "engine_displacement": 1.6,
+                    "body_type": "Седан",
+                    "fuel_type": "Бензин",
+                    "transmission": "АКПП",
+                }
+            ]
+        },
+    )
     brand: str = Field(min_length=1, max_length=100)
     name: str = Field(min_length=1, max_length=150)
     location: str = Field(min_length=1, max_length=150)

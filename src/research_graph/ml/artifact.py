@@ -79,6 +79,8 @@ class Predictor:
             if sum(entry.file_size for entry in archive.infolist()) > MAX_ARCHIVE_BYTES:
                 raise ValueError("uncompressed model exceeds 50 MiB")
             self.metadata: dict[str, Any] = json.loads(archive.read("metadata.json"))
+            if not isinstance(self.metadata, dict):
+                raise ValueError("model metadata must be an object")
             if (
                 self.metadata.get("format_version") != 1
                 or self.metadata.get("features") != FEATURES
@@ -123,7 +125,7 @@ class Predictor:
                 )
                 for car in cars
             ]
-        result = [max(1.0, float(value)) for value in values]
-        if not all(math.isfinite(value) for value in result):
+        if not all(math.isfinite(float(value)) for value in values):
             raise ValueError("non-finite predictions")
+        result = [max(1.0, float(value)) for value in values]
         return result

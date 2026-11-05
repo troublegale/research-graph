@@ -90,3 +90,52 @@ def test_module_entry_point(
         runpy.run_module("research_graph", run_name="__main__", alter_sys=True)
     assert exc_info.value.code == 0
     assert capsys.readouterr().out.strip() == __version__
+
+
+def test_data_and_training_commands(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from alembic.config import Config
+
+    from tests.db_fixtures import ROOT
+
+    original_init = Config.__init__
+
+    def project_config(self: Config, *args: object, **kwargs: object) -> None:
+        original_init(self, str(ROOT / "alembic.ini"))
+        self.set_main_option("script_location", str(ROOT / "migrations"))
+
+    monkeypatch.setattr(Config, "__init__", project_config)
+    assert runner.invoke(app, ["migrate"]).exit_code == 0
+    assert runner.invoke(app, ["seed"]).exit_code == 0
+    assert runner.invoke(app, ["import-data", "data/demo.csv", "--limit", "1"]).exit_code == 0
+    result = runner.invoke(app, ["prepare-data", "data/demo.csv", "--size", "150"])
+    assert result.exit_code == 0, result.output
+    result = runner.invoke(app, ["train", "--threads", "1", "--iterations", "2"])
+    assert result.exit_code == 0, result.output
+    assert (tmp_path / "artifacts/model.zip").is_file()
+
+
+def test_serve_command(monkeypatch: pytest.MonkeyPatch) -> None:
+    import uvicorn
+
+    calls: list[object] = []
+    monkeypatch.setattr(uvicorn, "run", lambda *args, **kwargs: calls.append(kwargs))
+    assert runner.invoke(app, ["serve", "--port", "8001"]).exit_code == 0
+    assert calls
+
+
+def test_download_command_streams_expected_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import io
+    import urllib.request
+    import zipfile
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("all_regions.csv", "brand,name\nToyota,Corolla\n")
+    payload = buffer.getvalue()
+    monkeypatch.setattr(urllib.request, "urlopen", lambda *args, **kwargs: io.BytesIO(payload))
+    result = runner.invoke(app, ["download-data"])
+    assert result.exit_code == 0, result.output
+    assert (tmp_path / "data/raw/all_regions.csv").read_text() == "brand,name\nToyota,Corolla\n"
+    assert not (tmp_path / "data/raw/all_regions.zip.part").exists()
