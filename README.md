@@ -301,9 +301,17 @@ PR зависимы: [приложение](https://github.com/troublegale/resea
 При последовательном слиянии используйте merge-коммиты и переназначайте базу
 следующего PR на main, чтобы сохранить историю разработки.
 
+6 ноября 2026 проведено ревью PR
+[№3](https://github.com/WhyNot-png/anime-data-engineering/pull/3#pullrequestreview-5800315596)
+и [№5](https://github.com/WhyNot-png/anime-data-engineering/pull/5#pullrequestreview-5800316041)
+коллеги в `WhyNot-png/anime-data-engineering`: по три комментария к коду и
+итоговое решение Comment. Оба PR уже были слиты, поэтому ревью ретроспективные.
+[Подробности, проверки и ссылки на замечания](docs/peer_reviews.md).
+
 - [План](docs/project_plan.md)
 - [Метрики](docs/ml_results.json)
 - [Результаты проверки](docs/validation.md)
+- [Проведённые ревью коллеги](docs/peer_reviews.md)
 - [Демонстрация](docs/demo.md)
 - [Запросы на интерфейс](docs/prompts.md)
 - [Отчёт лабораторной 1](docs/lab1_report.md)
