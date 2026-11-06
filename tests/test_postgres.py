@@ -17,6 +17,7 @@ from research_graph.pipelines.importer import import_csv
 from research_graph.pipelines.seed import write_demo_csv
 from research_graph.storage.database import make_engine, session_factory
 from tests.db_fixtures import migration_config
+from tests.test_predictions import assert_concurrent_first_predictions
 
 
 @pytest.mark.skipif(not os.environ.get("TEST_POSTGRES_URL"), reason="PostgreSQL URL not configured")
@@ -36,6 +37,7 @@ def test_postgresql_migrations_and_workflow(tmp_path: Path) -> None:
         config = migration_config(isolated_url)
         command.upgrade(config, "head")
         command.check(config)
+        assert_concurrent_first_predictions(engine)
         path = tmp_path / "demo.csv"
         write_demo_csv(path, 12)
         with session_factory(engine)() as session:

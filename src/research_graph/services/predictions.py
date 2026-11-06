@@ -4,6 +4,8 @@ import json
 from typing import Any
 
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as postgresql_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import Session
 
 from research_graph.ml.artifact import Predictor
@@ -17,15 +19,21 @@ def predict_and_save(
     cars: list[CarFeatures],
     listing_ids: list[int | None] | None = None,
 ) -> list[dict[str, Any]]:
-    version = session.scalar(select(ModelVersion).where(ModelVersion.version == predictor.version))
-    if version is None:
-        version = ModelVersion(
+    insert = postgresql_insert if session.get_bind().dialect.name == "postgresql" else sqlite_insert
+    # Let the unique index arbitrate concurrent first uses, without rolling back
+    # the caller's transaction or turning an expected race into HTTP 409.
+    session.execute(
+        insert(ModelVersion)
+        .values(
             version=predictor.version,
             algorithm=predictor.algorithm,
             metrics_json=json.dumps(predictor.metadata.get("test", {})),
         )
-        session.add(version)
-        session.flush()
+        .on_conflict_do_nothing(index_elements=[ModelVersion.version])
+    )
+    version = session.execute(
+        select(ModelVersion).where(ModelVersion.version == predictor.version)
+    ).scalar_one()
     prices = predictor.predict(cars)
     results = []
     for index, (car, price) in enumerate(zip(cars, prices, strict=True)):
