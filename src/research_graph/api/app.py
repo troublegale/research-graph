@@ -3,7 +3,6 @@
 import csv
 import io
 import logging
-import math
 import threading
 import zipfile
 from collections.abc import Iterator
@@ -31,7 +30,7 @@ from research_graph.models.entities import (
     Observation,
     SearchRequest,
 )
-from research_graph.pipelines.importer import clean_row
+from research_graph.pipelines.importer import clean_row, number
 from research_graph.schemas import (
     CandidateCreate,
     CarFeatures,
@@ -124,6 +123,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             },
         )
 
+    @app.exception_handler(Exception)
+    async def unexpected_error(_: Request, exc: Exception) -> JSONResponse:
+        logger.error("Unexpected application error", exc_info=exc)
+        return JSONResponse(
+            status_code=500,
+            content={"error": {"code": "internal_error", "message": "Внутренняя ошибка сервиса"}},
+        )
+
     from starlette.exceptions import HTTPException
 
     @app.exception_handler(HTTPException)
@@ -166,10 +173,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         page: Annotated[int, Query(ge=1)] = 1,
         page_size: Annotated[int, Query(ge=1, le=100)] = 20,
         budget: Annotated[int | None, Query(gt=0)] = None,
-        brand_id: int | None = None,
-        location_id: int | None = None,
-        min_year: int | None = None,
-        max_mileage: float | None = None,
+        brand_id: Annotated[int | None, Query(gt=0)] = None,
+        location_id: Annotated[int | None, Query(gt=0)] = None,
+        min_year: Annotated[int | None, Query(ge=1900, le=2100)] = None,
+        max_mileage: Annotated[float | None, Query(ge=0, le=10_000_000)] = None,
         sort: Literal["price", "-price", "year", "-year"] = "price",
     ) -> dict[str, Any]:
         query = catalog_query()
@@ -320,9 +327,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             ) from exc
         with app.state.upload_lock:
             settings.model_path.parent.mkdir(parents=True, exist_ok=True)
-            pending = settings.model_path.with_suffix(".pending")
-            pending.write_bytes(data)
-            pending.replace(settings.model_path)
+            # Re-uploading the same file need not replace it. On Windows the
+            # browser may still hold the selected source file open.
+            if not settings.model_path.is_file() or settings.model_path.read_bytes() != data:
+                pending = settings.model_path.with_suffix(".pending")
+                pending.write_bytes(data)
+                pending.replace(settings.model_path)
             request.app.state.predictor = predictor
         return {"status": "loaded", "version": predictor.version}
 
@@ -350,15 +360,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                         if not values.get(key):
                             values[key] = None
                     cars.append(CarFeatures.model_validate(values))
-            targets = (
-                [float(row["price"]) for row in rows]
-                if all(row.get("price") for row in rows)
-                else None
-            )
-            if targets is not None and not all(
-                math.isfinite(value) and value > 0 for value in targets
-            ):
-                raise ValueError("invalid price")
+            targets = None
+            if all(row.get("price") for row in rows):
+                targets = []
+                for row in rows:
+                    price = number(row["price"])
+                    if price is None or price <= 0:
+                        raise ValueError("invalid price")
+                    targets.append(price)
         except (ValueError, ValidationError, csv.Error, UnicodeError) as exc:
             raise service.DomainError(
                 422,

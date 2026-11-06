@@ -140,3 +140,40 @@ def test_reject_archive_limits_and_unknown_files() -> None:
         archive.writestr("metadata.json", b"x" * (MAX_ARCHIVE_BYTES + 1))
     with pytest.raises(ValueError, match="uncompressed"):
         Predictor(buffer.getvalue())
+
+
+def test_reject_non_object_metadata() -> None:
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("metadata.json", "[]")
+    with pytest.raises(ValueError, match="object"):
+        Predictor(buffer.getvalue())
+
+
+def test_reject_native_model_with_wrong_features() -> None:
+    model = CatBoostRegressor(
+        iterations=2, thread_count=1, verbose=False, allow_writing_files=False
+    )
+    model.fit([[0], [1], [2]], [100, 200, 300])
+    data = archive_bytes(
+        {"format_version": 1, "features": FEATURES, "algorithm": "catboost"}, model
+    )
+    with pytest.raises(ValueError, match="features"):
+        Predictor(data, 1)
+
+
+def test_nonfinite_prediction_rejected() -> None:
+    data = archive_bytes(
+        {
+            "format_version": 1,
+            "features": FEATURES,
+            "algorithm": "ridge",
+            "coefficients": {"year": 1e308},
+            "intercept": 1e308,
+        }
+    )
+    predictor = Predictor(data)
+    with pytest.raises(ValueError, match="non-finite"):
+        predictor.predict(
+            [CarFeatures(brand="Toyota", name="Corolla", location="Москва", year=2100)]
+        )

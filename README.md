@@ -170,8 +170,8 @@ erDiagram
     car_models ||--o{ listings : identifies
     locations ||--o{ listings : located_in
     listings ||--|{ listing_observations : observed
-    brands ||--o{ search_requests : optional_filter
-    locations ||--o{ search_requests : optional_filter
+    brands o|--o{ search_requests : optional_filter
+    locations o|--o{ search_requests : optional_filter
     search_requests ||--o{ request_candidates : contains
     listings ||--o{ request_candidates : shortlisted
     model_versions ||--o{ price_estimates : produced
@@ -182,6 +182,7 @@ M:N — заявки/объявления через кандидатов. UNIQU
 ID источника, наблюдение, пара заявка–машина. CHECK: цены, бюджеты, диапазоны,
 статусы. Индексы: внешние ключи, дата, цена, год/пробег, статус.
 Схема создаётся только Alembic, downgrade проверяется на тестовой БД.
+[Полная ERD с полями](docs/erd.mmd).
 
 ```bash
 uv run alembic upgrade head
@@ -271,6 +272,20 @@ uv run pytest
 uv run pre-commit run --all-files
 ```
 
+Проверка интерфейса в Chromium (создаёт и удаляет одну тестовую заявку,
+сохраняет скриншоты в `artifacts`):
+
+```bash
+uv run playwright install chromium
+uv run python scripts/check_web.py http://127.0.0.1:8000
+uv run python scripts/check_feedback.py http://127.0.0.1:8000
+```
+
+Для проверки нужен запущенный сервер с каталогом и загруженной моделью.
+Вторая проверка задерживает ответы на 1,2 секунды, проверяет индикаторы,
+сообщения о завершении, запрет повторной отправки и восстановление после ошибок.
+CI также выполняет PostgreSQL-интеграцию и сценарий браузера на Docker Compose.
+
 Тесты используют изолированные БД и настоящие миграции, проверяют ETL,
 идемпотентность, ограничения, сервисы, негативные API-сценарии, оба алгоритма,
 безопасные форматы, split и CLI. CI: Linux/Windows × Python 3.12/3.13,
@@ -278,10 +293,26 @@ uv run pre-commit run --all-files
 
 Разработка в feature-ветках и PR. Взаимное ревью одногруппником по заданию
 обязательно: два своих PR с ревью, ревью двух PR коллеги. CI и самопроверка
-его не заменяют. Настройка защиты main и внешние Approve проверяются отдельно.
+его не заменяют. Защита main включена: актуальный зелёный CI, один внешний
+Approve и разрешённые обсуждения обязательны, правило распространяется на администратора.
+PR зависимы: [приложение](https://github.com/troublegale/research-graph/pull/1)
+→ [упаковка](https://github.com/troublegale/research-graph/pull/2)
+→ [проверка интерфейса](https://github.com/troublegale/research-graph/pull/3).
+При последовательном слиянии используйте merge-коммиты и переназначайте базу
+следующего PR на main, чтобы сохранить историю разработки.
+
+6 ноября 2026 проведено ревью PR
+[№3](https://github.com/WhyNot-png/anime-data-engineering/pull/3#pullrequestreview-5800315596)
+и [№5](https://github.com/WhyNot-png/anime-data-engineering/pull/5#pullrequestreview-5800316041)
+коллеги в `WhyNot-png/anime-data-engineering`: по три комментария к коду и
+итоговое решение Comment. Оба PR уже были слиты, поэтому ревью ретроспективные.
+[Подробности, проверки и ссылки на замечания](docs/peer_reviews.md).
 
 - [План](docs/project_plan.md)
 - [Метрики](docs/ml_results.json)
+- [Результаты проверки](docs/validation.md)
+- [Проведённые ревью коллеги](docs/peer_reviews.md)
+- [Исправления по полученному ревью](docs/review_fixes.md)
 - [Демонстрация](docs/demo.md)
 - [Запросы на интерфейс](docs/prompts.md)
 - [Отчёт лабораторной 1](docs/lab1_report.md)

@@ -118,6 +118,20 @@ def test_request_validation(client: TestClient, payload: dict[str, Any]) -> None
     assert response.json()["error"]["details"]
 
 
+@pytest.mark.parametrize(
+    "parameters",
+    [
+        {"brand_id": 0},
+        {"location_id": -1},
+        {"min_year": 1800},
+        {"max_mileage": -1},
+        {"sort": "unsafe"},
+    ],
+)
+def test_catalog_rejects_invalid_filters(client: TestClient, parameters: dict[str, Any]) -> None:
+    assert client.get("/api/listings", params=parameters).status_code == 422
+
+
 def test_model_upload_and_predictions(client: TestClient) -> None:
     car = CarFeatures(brand="Toyota", name="Corolla", location="Москва").model_dump()
     assert client.post("/predict", json=[car]).status_code == 409
@@ -132,6 +146,19 @@ def test_model_upload_and_predictions(client: TestClient) -> None:
     assert client.post("/api/listings/1/estimate").status_code == 200
     assert client.get("/api/analytics/prices").json()
     assert client.get("/api/analytics/deviations").json()[0]["count"] == 1
+
+
+def test_identical_upload_does_not_replace_open_file(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    payload = ridge_archive()
+    assert client.post("/upload-model", files={"file": ("model.zip", payload)}).status_code == 200
+
+    def file_is_open(self: Path, target: Path) -> Path:
+        raise PermissionError("source file is still selected in the browser")
+
+    monkeypatch.setattr(Path, "replace", file_is_open)
+    assert client.post("/upload-model", files={"file": ("model.zip", payload)}).status_code == 200
 
 
 def test_csv_prediction(client: TestClient, tmp_path: Path) -> None:
@@ -173,6 +200,33 @@ def test_csv_prediction(client: TestClient, tmp_path: Path) -> None:
         )
 
 
+@pytest.mark.parametrize("raw", [False, True])
+@pytest.mark.parametrize("price", ["1 000 000", "1\u00a0000\u00a0000", "1 000 000,00"])
+def test_csv_metrics_use_normalized_price(client: TestClient, raw: bool, price: str) -> None:
+    import csv
+    import io
+
+    client.post("/upload-model", files={"file": ("model.zip", ridge_archive())})
+    row = {"brand": "Toyota", "name": "Corolla", "location": "Москва", "price": price}
+    if raw:
+        row.update(
+            {
+                "bodyType": "Седан",
+                "link": "https://moscow.drom.ru/toyota/corolla/123.html",
+                "parse_date": "2023-06-01 12:00:00",
+            }
+        )
+    stream = io.StringIO()
+    writer = csv.DictWriter(stream, fieldnames=list(row))
+    writer.writeheader()
+    writer.writerow(row)
+    response = client.post(
+        "/predict-from-csv", files={"file": ("cars.csv", stream.getvalue().encode("utf-8"))}
+    )
+    assert response.status_code == 200
+    assert response.json()["metrics"]["mae"] == 0
+
+
 def test_startup_model_and_disabled_upload(db: Session, tmp_path: Path) -> None:
     path = tmp_path / "model.zip"
     path.write_bytes(ridge_archive())
@@ -200,3 +254,15 @@ def test_integrity_error_contract(client: TestClient, monkeypatch: pytest.Monkey
     response = client.post("/api/requests", json={"title": "Конфликт", "budget": 1000000})
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "integrity_conflict"
+
+
+def test_unexpected_error_contract(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    def fail(self: Session, *args: object, **kwargs: object) -> None:
+        raise RuntimeError("private internal details")
+
+    monkeypatch.setattr(Session, "execute", fail)
+    with TestClient(client.app, raise_server_exceptions=False) as safe_client:
+        response = safe_client.get("/api/health")
+    assert response.status_code == 500
+    assert response.json()["error"]["code"] == "internal_error"
+    assert "private" not in response.text
