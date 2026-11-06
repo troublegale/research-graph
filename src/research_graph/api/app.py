@@ -3,7 +3,6 @@
 import csv
 import io
 import logging
-import math
 import threading
 import zipfile
 from collections.abc import Iterator
@@ -31,7 +30,7 @@ from research_graph.models.entities import (
     Observation,
     SearchRequest,
 )
-from research_graph.pipelines.importer import clean_row
+from research_graph.pipelines.importer import clean_row, number
 from research_graph.schemas import (
     CandidateCreate,
     CarFeatures,
@@ -361,15 +360,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                         if not values.get(key):
                             values[key] = None
                     cars.append(CarFeatures.model_validate(values))
-            targets = (
-                [float(row["price"]) for row in rows]
-                if all(row.get("price") for row in rows)
-                else None
-            )
-            if targets is not None and not all(
-                math.isfinite(value) and value > 0 for value in targets
-            ):
-                raise ValueError("invalid price")
+            targets = None
+            if all(row.get("price") for row in rows):
+                targets = []
+                for row in rows:
+                    price = number(row["price"])
+                    if price is None or price <= 0:
+                        raise ValueError("invalid price")
+                    targets.append(price)
         except (ValueError, ValidationError, csv.Error, UnicodeError) as exc:
             raise service.DomainError(
                 422,

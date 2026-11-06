@@ -6,8 +6,52 @@ Install browser first: uv run playwright install chromium
 
 import sys
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
-from playwright.sync_api import expect, sync_playwright
+from playwright.sync_api import Browser, Route, expect, sync_playwright
+
+
+def check_requests_pagination(browser: Browser, url: str) -> None:
+    """The 101st request stays visible and selectable after loading another page."""
+    page = browser.new_page()
+    errors: list[str] = []
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    oldest = {
+        "id": 1,
+        "title": "Самая старая заявка",
+        "budget": 1000000,
+        "status": "open",
+        "revision": 1,
+    }
+    recent = [
+        oldest | {"id": identity, "title": f"Заявка {identity}"} for identity in range(101, 1, -1)
+    ]
+
+    def requests_route(route: Route) -> None:
+        parsed = urlsplit(route.request.url)
+        if parsed.path == "/api/requests":
+            number = parse_qs(parsed.query).get("page", ["1"])[0]
+            route.fulfill(json=recent if number == "1" else [oldest])
+        elif parsed.path == "/api/requests/1":
+            route.fulfill(json=oldest)
+        elif parsed.path == "/api/requests/1/candidates":
+            route.fulfill(json=[])
+        else:
+            route.continue_()
+
+    page.route("**/api/requests**", requests_route)
+    page.goto(url)
+    expect(page.locator("#requests")).to_have_attribute("aria-busy", "false")
+    expect(page.locator("#request-list [data-request]")).to_have_count(100)
+    page.locator("[data-more-requests]").click()
+    expect(page.locator("#request-list [data-request]")).to_have_count(101)
+    page.locator('[data-request="1"]').click()
+    expect(page.locator("#detail-title")).to_have_text("Самая старая заявка")
+    expect(page.locator("#request-list [data-request]")).to_have_count(101)
+    expect(page.locator("[data-more-requests]")).to_have_count(0)
+    if errors:
+        raise AssertionError(errors)
+    page.close()
 
 
 def main(url: str) -> None:
@@ -58,6 +102,7 @@ def main(url: str) -> None:
             raise AssertionError("page overflows mobile viewport")
         if errors:
             raise AssertionError(errors)
+        check_requests_pagination(browser, url)
         browser.close()
 
 

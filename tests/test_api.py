@@ -200,6 +200,33 @@ def test_csv_prediction(client: TestClient, tmp_path: Path) -> None:
         )
 
 
+@pytest.mark.parametrize("raw", [False, True])
+@pytest.mark.parametrize("price", ["1 000 000", "1\u00a0000\u00a0000", "1 000 000,00"])
+def test_csv_metrics_use_normalized_price(client: TestClient, raw: bool, price: str) -> None:
+    import csv
+    import io
+
+    client.post("/upload-model", files={"file": ("model.zip", ridge_archive())})
+    row = {"brand": "Toyota", "name": "Corolla", "location": "Москва", "price": price}
+    if raw:
+        row.update(
+            {
+                "bodyType": "Седан",
+                "link": "https://moscow.drom.ru/toyota/corolla/123.html",
+                "parse_date": "2023-06-01 12:00:00",
+            }
+        )
+    stream = io.StringIO()
+    writer = csv.DictWriter(stream, fieldnames=list(row))
+    writer.writeheader()
+    writer.writerow(row)
+    response = client.post(
+        "/predict-from-csv", files={"file": ("cars.csv", stream.getvalue().encode("utf-8"))}
+    )
+    assert response.status_code == 200
+    assert response.json()["metrics"]["mae"] == 0
+
+
 def test_startup_model_and_disabled_upload(db: Session, tmp_path: Path) -> None:
     path = tmp_path / "model.zip"
     path.write_bytes(ridge_archive())

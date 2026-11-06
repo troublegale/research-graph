@@ -312,6 +312,7 @@ PR зависимы: [приложение](https://github.com/troublegale/resea
 - [Метрики](docs/ml_results.json)
 - [Результаты проверки](docs/validation.md)
 - [Проведённые ревью коллеги](docs/peer_reviews.md)
+- [Исправления по полученному ревью](docs/review_fixes.md)
 - [Демонстрация](docs/demo.md)
 - [Запросы на интерфейс](docs/prompts.md)
 - [Отчёт лабораторной 1](docs/lab1_report.md)
