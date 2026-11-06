@@ -31,10 +31,31 @@
 ответ и метрики по нормализованной цене. Отсутствующая цена по-прежнему
 означает прогноз без метрик, некорректная — ошибку валидации.
 
+[Коммит исправления CSV и браузерной проверки](https://github.com/troublegale/research-graph/commit/88d97cf2eba601867a0981a8f3f9bb3f2a2ac8d5).
+
+## Ответы автора и проверка исправлений
+
+- [Ответ на замечания PR №1](https://github.com/troublegale/research-graph/pull/1#issuecomment-6685596915).
+- [Ответ на замечание PR №3](https://github.com/troublegale/research-graph/pull/3#issuecomment-6685648622).
+
+После исправлений 6 ноября 2026 выполнен полный набор проверок с SQLite
+и отдельной PostgreSQL: **115 тестов прошли, покрытие — 99,49%**.
+Ruff, проверка форматирования и mypy завершились успешно. В Chromium проверены
+загрузка второй страницы заявок и открытие 101-й записи; тот же сценарий
+выполнен в обновлённом Docker-приложении. Проверки включены в GitHub Actions.
+
 ## Слияние
 
-Исправления PR №1 перенесены в PR №2 и №3 без переписывания истории.
-Порядок слияния: №1 → №2 → №3, с обновлением базовых веток и проверками CI.
-Обычные комментарии с замечаниями не являются формальным Approve.
-Защита main сохраняется; требуемое внешнее одобрение не подменяется
-самопроверкой или ответом автора.
+Все три PR последовательно слиты в `main` **6 ноября 2026** с сохранением
+истории. После смены базовых веток они обновлены из `main`; коллега
+`WhyNot-png` подтвердил итоговые версии через GitHub Approve.
+
+| PR | Итоговое одобрение | Коммит слияния | Время слияния, Москва |
+|---|---|---|---|
+| [№1](https://github.com/troublegale/research-graph/pull/1) | [Approve](https://github.com/troublegale/research-graph/pull/1#pullrequestreview-5800624649) | `154ba6a4364a58a7aede42db0959230363abdfea` | 16:21:19 |
+| [№2](https://github.com/troublegale/research-graph/pull/2) | [Approve](https://github.com/troublegale/research-graph/pull/2#pullrequestreview-5800724625) | `99dd2b256aefa1ccb96cb1956d716de5f74e1a0a` | 16:29:45 |
+| [№3](https://github.com/troublegale/research-graph/pull/3) | [Approve](https://github.com/troublegale/research-graph/pull/3#pullrequestreview-5800790991) | `cfa49ec36068b2b1af51c3d5677b04ea6912ee09` | 16:35:41 |
+
+Получены формальные одобрения на все три PR. В самих комментариях коллеги
+содержатся два замечания к №1 и одно к №3; в отчёте они не выдаются за
+три замечания на каждый PR. Защита `main` при слиянии сохранялась.

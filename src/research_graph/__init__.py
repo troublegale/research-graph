@@ -1,4 +1,4 @@
-"""research_graph — каркас учебного проекта research-graph."""
+"""Автоподбор: информационная система с ETL и ML-оценкой цены."""
 
 from importlib.metadata import PackageNotFoundError, version
 

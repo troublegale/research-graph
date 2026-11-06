@@ -20,6 +20,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from research_graph import __version__
 from research_graph.config import Settings, get_settings
 from research_graph.ml.artifact import MAX_ARCHIVE_BYTES, Predictor
 from research_graph.models.entities import (
@@ -79,7 +80,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(
         title="Автоподбор",
-        version="0.2.0",
+        version=__version__,
         description="Подбор по требованиям и оценка исторической цены объявлений. Цены сделок и доступность автомобилей не подтверждаются.",
         lifespan=lifespan,
     )
