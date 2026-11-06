@@ -70,6 +70,19 @@ def test_api_request_journey(client: TestClient) -> None:
     assert client.get("/not-a-route").json()["error"]["code"] == "http_error"
 
 
+def test_requests_after_first_hundred_remain_accessible(client: TestClient, db: Session) -> None:
+    from research_graph.models.entities import SearchRequest
+
+    db.add_all([SearchRequest(title=f"Заявка {index}", budget=1000000) for index in range(101)])
+    db.commit()
+    first = client.get("/api/requests?page=1").json()
+    second = client.get("/api/requests?page=2").json()
+    assert len(first) == 100
+    assert len(second) == 1
+    assert second[0]["title"] == "Заявка 0"
+    assert client.get(f"/api/requests/{second[0]['id']}").status_code == 200
+
+
 @pytest.mark.parametrize("sort", ["price", "-price", "year", "-year"])
 def test_catalog_filter_and_sort(client: TestClient, sort: str) -> None:
     data = client.get(
