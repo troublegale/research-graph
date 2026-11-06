@@ -2,6 +2,9 @@
 
 ![CI](https://github.com/troublegale/research-graph/actions/workflows/ci.yml/badge.svg)
 
+Версия **[v1.0.0](https://github.com/troublegale/research-graph/tree/v1.0.0)**.
+[Описание релиза](docs/releases/v1.0.0.md).
+
 Помощник покупателя: требования и бюджет → подходящие объявления → сохранённые
 кандидаты → сравнение цены объявления с ML-прогнозом. Учебный проект ИТМО,
 «Разработка на Python и инженерия данных». Регистрации нет.
@@ -295,11 +298,13 @@ CI также выполняет PostgreSQL-интеграцию и сценар
 обязательно: два своих PR с ревью, ревью двух PR коллеги. CI и самопроверка
 его не заменяют. Защита main включена: актуальный зелёный CI, один внешний
 Approve и разрешённые обсуждения обязательны, правило распространяется на администратора.
-PR зависимы: [приложение](https://github.com/troublegale/research-graph/pull/1)
-→ [упаковка](https://github.com/troublegale/research-graph/pull/2)
-→ [проверка интерфейса](https://github.com/troublegale/research-graph/pull/3).
-При последовательном слиянии используйте merge-коммиты и переназначайте базу
-следующего PR на main, чтобы сохранить историю разработки.
+6 ноября 2026 в `main` последовательно слиты
+[приложение — PR №1](https://github.com/troublegale/research-graph/pull/1),
+[упаковка — PR №2](https://github.com/troublegale/research-graph/pull/2)
+и [интерфейс и проверки — PR №3](https://github.com/troublegale/research-graph/pull/3).
+Коллега `WhyNot-png` одобрил итоговые версии всех трёх PR. Все три полученных
+замечания исправлены и проверены тестами.
+[Подтверждения исправлений, ответов и слияний](docs/review_fixes.md).
 
 6 ноября 2026 проведено ревью PR
 [№3](https://github.com/WhyNot-png/anime-data-engineering/pull/3#pullrequestreview-5800315596)

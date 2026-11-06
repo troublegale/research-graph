@@ -1,7 +1,7 @@
 [project]
 name = "research-graph"
-version = "0.1.0"
-description = "research-graph: учебный проект курса Python (ИТМО) — конфигурация, логирование и CLI"
+version = "1.0.0"
+description = "Помощник покупателя автомобиля: FastAPI, ETL и ML-оценка цены"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
