@@ -1,0 +1,78 @@
+{
+  "format_version": 1,
+  "features": [
+    "brand",
+    "name",
+    "location",
+    "body_type",
+    "fuel_type",
+    "transmission",
+    "year",
+    "mileage",
+    "power",
+    "engine_displacement"
+  ],
+  "algorithm": "catboost",
+  "validation": {
+    "ridge": {
+      "mae": 536213.3246257515,
+      "rmse": 1143698.1771365313
+    },
+    "catboost": {
+      "mae": 342454.4194175908,
+      "rmse": 889645.1886130637
+    }
+  },
+  "seed": 42,
+  "rows": {
+    "train": 30000,
+    "validation": 10000,
+    "test": 10000
+  },
+  "threads": 6,
+  "iterations": 800,
+  "period": {
+    "min": "2023-05-01T21:00:00",
+    "max": "2023-06-21T22:00:00"
+  },
+  "limitation": "Historical asking prices; not transaction prices or current market valuation.",
+  "test": {
+    "mae": 334060.97402333404,
+    "rmse": 765822.9151397675
+  },
+  "baseline_test": {
+    "mae": 1027323.4506,
+    "rmse": 2132807.993141563
+  },
+  "test_segments": [
+    {
+      "from": 0,
+      "to": 500000,
+      "count": 2985,
+      "mae": 137526.1284798473,
+      "rmse": 220724.65752160203
+    },
+    {
+      "from": 500000,
+      "to": 1500000,
+      "count": 3956,
+      "mae": 227237.83489429505,
+      "rmse": 384542.3099555565
+    },
+    {
+      "from": 1500000,
+      "to": 5000000,
+      "count": 2738,
+      "mae": 466119.8017961708,
+      "rmse": 735148.2620710795
+    },
+    {
+      "from": 5000000,
+      "to": null,
+      "count": 321,
+      "mae": 2351730.0765147954,
+      "rmse": 3374220.7807813776
+    }
+  ],
+  "elapsed_seconds": 90.06
+}
